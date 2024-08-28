@@ -88,7 +88,7 @@ class _MyAppState extends State<MyApp> {
         _txtTest.text = response.body;
         _success(response.body, true);
       } else {
-         _txtTest.text = '失败:' + response.body;
+         _txtTest.text = '失败:' + response.statusCode.toString() + response.body;
       }
     }
   }
