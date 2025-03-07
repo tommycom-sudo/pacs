@@ -8,3 +8,9 @@ build/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+android/.idea/vcs.xml
+android/.idea/gradle.xml
+android/.idea/misc.xml
+android/.idea/modules.xml
+android/.idea/misc.xml
+

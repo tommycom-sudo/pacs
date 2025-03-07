@@ -74,21 +74,20 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-
   _doGetTest() async {
-   var response, url;
-    try{
+    var response, url;
+    try {
       url = Uri.parse(_url.text + "/getQueue/" + _setid.text);
       response = await http.get(url);
       print('请求服务');
-    }catch (e){
-       _txtTest.text = e.toString() ;
-    } finally{
+    } catch (e) {
+      _txtTest.text = e.toString();
+    } finally {
       if (response.statusCode == 200) {
         _txtTest.text = response.body;
         _success(response.body, true);
       } else {
-         _txtTest.text = '失败:' + response.statusCode.toString() + response.body;
+        _txtTest.text = '失败:' + response.statusCode.toString() + response.body;
       }
     }
   }
@@ -102,7 +101,6 @@ class _MyAppState extends State<MyApp> {
     } else {
       print("失败"); //+ url.toString());
     }
-    
   }
 
   Future<void> postData(queueId) async {
@@ -133,7 +131,7 @@ class _MyAppState extends State<MyApp> {
 
     while (i < total) {
       var s = '请 ' +
-          map['data'][i]["id"] +
+          //map['data'][i]["id"] +
           '[' +
           map['data'][i]["name"] +
           ']' +
@@ -156,14 +154,14 @@ class _MyAppState extends State<MyApp> {
   dynamic initTts() async {
     flutterTts = FlutterTts();
     //读取默认值
-    final url = await getUserConfig<String>('url',
-        defaultValue: 'http://10.196.5.160');
+    final url =
+        await getUserConfig<String>('url', defaultValue: 'http://10.196.5.160');
     _url.text = url;
     final setid = await getUserConfig<String>('setid', defaultValue: '3');
     _setid.text = setid;
     final urljh = await getUserConfig<String>('urljh',
         defaultValue: 'http://10.196.5.143:8082');
-    _urljh.text = urljh; 
+    _urljh.text = urljh;
 
     final selectedEngine =
         await getUserConfig<String>('engine', defaultValue: '');
@@ -317,9 +315,9 @@ class _MyAppState extends State<MyApp> {
     */
 //'http://192.168.0.193:8082/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=3')
 
-    openLink(
-        _urljh.text  + '/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=' +
-            _setid.text);
+    openLink(_urljh.text +
+        '/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=' +
+        _setid.text);
 
     // Navigator.push(
     //     context,
@@ -333,7 +331,6 @@ class _MyAppState extends State<MyApp> {
   Future<void> _speak2() async {
     _isStop = false;
     _timer = Timer.periodic(Duration(seconds: 3), (timer) {
-      
       _job();
     });
     /*
@@ -533,7 +530,6 @@ class _MyAppState extends State<MyApp> {
               Colors.blue, Colors.blueAccent, Icons.abc, '发声测试', _pause),
           _buildButtonColumn(
               Colors.blue, Colors.blueAccent, Icons.abc, 'GET测试', _doGetTest),
-            
         ],
       ),
     );
