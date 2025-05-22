@@ -136,7 +136,8 @@ class _MyAppState extends State<MyApp> {
           map['data'][i]["name"] +
           ']' +
           '到' +
-          map['data'][i]["roomname"];
+          map['data'][i]["roomname"] +
+          '检查';
       _speak(s, 3);
       var queueid = map['data'][i]['queueid'];
       postData(queueid);
@@ -296,35 +297,52 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  //叫号+排队显示
+  /// 语音播报和页面跳转的异步方法
+  /// 该方法用于定时执行任务并打开指定URL
   Future<void> _speak1() async {
+    // 设置停止标志为false，表示开始执行
     _isStop = false;
+
+    // 创建一个定时器，每3秒执行一次_job方法
     _timer = Timer.periodic(Duration(seconds: 3), (timer) {
       _job();
     });
-    /*
+
+    /* 语音播报相关代码（已注释）
+    // 设置语音播报的音量
     await flutterTts.setVolume(volume);
+    // 设置语音播报的语速
     await flutterTts.setSpeechRate(rate);
+    // 设置语音播报的音调
     await flutterTts.setPitch(pitch);
 
+    // 检查是否有需要播报的文本
     if (_newVoiceText != null) {
       if (_newVoiceText!.isNotEmpty) {
+        // 执行语音播报
         await flutterTts.speak(_newVoiceText!);
       }
     }
     */
-//'http://192.168.0.193:8082/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=3')
 
+    // 示例URL：'http://192.168.0.193:8082/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=3'
+
+    // 打开指定的URL链接
+    // _urljh.text: 基础URL地址（从文本输入框获取）
+    // _setid.text: 设置ID（从文本输入框获取）
     openLink(_urljh.text +
         '/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=' +
         _setid.text);
 
+    /* 导航到WebView页面的替代方案（已注释）
+    // 使用Navigator推入新的WebView页面
     // Navigator.push(
     //     context,
     //     //MaterialPageRoute(builder: (context) => WebviewWidget()),
     //     MaterialPageRoute(
     //         builder: (context) => BrowserPage(
     //             "http://192.168.0.193:8082/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=3")));
+    */
   }
 
   //仅叫号
