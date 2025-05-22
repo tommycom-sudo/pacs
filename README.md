@@ -3,3 +3,6 @@
 3.配置flutter中国环境（两个全局变量 PUB_HOSTED_URL=https://pub.flutter-io.cn, FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn）
 3.安装android  + sdK + 设置 ANDROID_HOME路径
 4 c:\gradle\gradle-8.2-all.zip   (这个有代理可以处理吗？）
+5.编译:
+cd c:\java\pacs
+flutter build apk
