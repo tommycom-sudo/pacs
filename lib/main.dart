@@ -57,6 +57,7 @@ class _MyAppState extends State<MyApp> {
   var _setid = new TextEditingController();
   var _urljh = new TextEditingController(); //叫号屏地址前缀
   var _txtTest = new TextEditingController(); //测试获取号内容
+  var _callCount = new TextEditingController(); //呼叫次数配置
 
   bool _isStop = false;
   late Timer _timer;
@@ -138,7 +139,8 @@ class _MyAppState extends State<MyApp> {
           '到' +
           map['data'][i]["roomname"] +
           '检查';
-      _speak(s, 3);
+      int callCount = int.tryParse(_callCount.text) ?? 3;
+      _speak(s, callCount);
       var queueid = map['data'][i]['queueid'];
       postData(queueid);
       i++;
@@ -163,6 +165,9 @@ class _MyAppState extends State<MyApp> {
     final urljh = await getUserConfig<String>('urljh',
         defaultValue: 'http://10.196.5.143:8082');
     _urljh.text = urljh;
+    final callCount =
+        await getUserConfig<String>('callCount', defaultValue: '3');
+    _callCount.text = callCount;
 
     final selectedEngine =
         await getUserConfig<String>('engine', defaultValue: '');
@@ -277,6 +282,7 @@ class _MyAppState extends State<MyApp> {
     await saveUserConfig('url', _url.text);
     await saveUserConfig('urljh', _urljh.text);
     await saveUserConfig('setid', _setid.text);
+    await saveUserConfig('callCount', _callCount.text);
     await saveUserConfig('engine', engine);
     // if (_newVoiceText != null) {
     //   if (_newVoiceText!.isNotEmpty) {
@@ -392,9 +398,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _pause() async {
-    _speak("语音测试1，请PX008 [徐海生] 到8号诊室", 1);
-    _speak("语音测试2，请PX009 '徐海生' 到8号诊室", 1);
-    _speak("语音测试3，请PX010 /徐海生/ 到8号诊室", 1);
+    _speak("语音测试1，请 [徐海生] 到D啊8号诊室检查", 1);
+    _speak("语音测试2，请PX009 '徐海生' 到DR 8号诊室", 1);
+    _speak("语音测试3，请PX010 /徐海生/ 到Da阿 8号诊室", 1);
   }
 
   @override
@@ -527,6 +533,16 @@ class _MyAppState extends State<MyApp> {
           maxLines: 11,
           minLines: 1,
           controller: this._txtTest,
+        ),
+        TextField(
+          maxLines: 1,
+          minLines: 1,
+          controller: this._callCount,
+          decoration: InputDecoration(
+            labelText: '呼叫次数',
+            hintText: '请输入呼叫次数（默认3次）',
+          ),
+          keyboardType: TextInputType.number,
         ),
       ]));
 
