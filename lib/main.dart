@@ -86,7 +86,7 @@ class _MyAppState extends State<MyApp> {
     } finally {
       if (response.statusCode == 200) {
         _txtTest.text = response.body;
-        _success(response.body, true);
+        await _success(response.body, true);
       } else {
         _txtTest.text = '失败:' + response.statusCode.toString() + response.body;
       }
@@ -98,7 +98,7 @@ class _MyAppState extends State<MyApp> {
     var url = Uri.parse(_url.text + "/getQueue/" + _setid.text);
     var response = await http.get(url);
     if (response.statusCode == 200) {
-      _success(response.body, true);
+      await _success(response.body, true);
     } else {
       print("失败"); //+ url.toString());
     }
@@ -125,7 +125,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  _success(String body, bool isNeedUtf8) {
+  Future<void> _success(String body, bool isNeedUtf8) async {
     var map = jsonDecode(body);
     int total = map['data'].length;
     int i = 0;
@@ -140,7 +140,7 @@ class _MyAppState extends State<MyApp> {
           map['data'][i]["roomname"] +
           '检查';
       int callCount = int.tryParse(_callCount.text) ?? 3;
-      _speak(s, callCount);
+      await _speak(s, callCount);
       var queueid = map['data'][i]['queueid'];
       postData(queueid);
       i++;
@@ -398,9 +398,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _pause() async {
-    _speak("语音测试1，请 [徐海生] 到D啊8号诊室检查", 1);
-    _speak("语音测试2，请PX009 '徐海生' 到DR 8号诊室", 1);
-    _speak("语音测试3，请PX010 /徐海生/ 到Da阿 8号诊室", 1);
+    await _speak("语音测试1，请 [徐海生] 到D啊8号诊室检查", 1);
+    await _speak("语音测试2，请PX009 '徐海生' 到DR 8号诊室", 1);
+    await _speak("语音测试3，请PX010 /徐海生/ 到Da阿 8号诊室", 1);
   }
 
   @override
@@ -508,89 +508,474 @@ class _MyAppState extends State<MyApp> {
       });
 
   Widget _inputSection() => Container(
-      alignment: Alignment.topCenter,
-      padding: EdgeInsets.only(top: 5.0, left: 10.0, right: 25.0),
+      padding: EdgeInsets.all(16.0),
       child: Column(children: [
-        TextField(
-          maxLines: 11,
-          minLines: 1,
-          controller: this._url,
-          // onChanged: (String value) {
-          //   _onChange(value);
-          // },
-        ),
-        TextField(
-          maxLines: 11,
-          minLines: 1,
-          controller: this._setid,
-        ),
-        TextField(
-          maxLines: 11,
-          minLines: 1,
-          controller: this._urljh,
-        ),
-        TextField(
-          maxLines: 11,
-          minLines: 1,
-          controller: this._txtTest,
-        ),
-        TextField(
-          maxLines: 1,
-          minLines: 1,
-          controller: this._callCount,
-          decoration: InputDecoration(
-            labelText: '呼叫次数',
-            hintText: '请输入呼叫次数（默认3次）',
+        // 服务器配置卡片
+        Card(
+          elevation: 4,
+          margin: EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.cloud, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text(
+                      '服务器配置',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: this._url,
+                  decoration: InputDecoration(
+                    labelText: '服务器地址',
+                    hintText: '请输入API服务器地址',
+                    prefixIcon: Icon(Icons.link),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: this._setid,
+                  decoration: InputDecoration(
+                    labelText: '设备ID',
+                    hintText: '请输入设备标识',
+                    prefixIcon: Icon(Icons.devices),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
-          keyboardType: TextInputType.number,
+        ),
+
+        // 显示配置卡片
+        Card(
+          elevation: 4,
+          margin: EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.monitor, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text(
+                      '显示配置',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[800],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: this._urljh,
+                  decoration: InputDecoration(
+                    labelText: '叫号屏地址',
+                    hintText: '请输入叫号显示页面地址',
+                    prefixIcon: Icon(Icons.tv),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // 语音配置卡片
+        Card(
+          elevation: 4,
+          margin: EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.volume_up, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text(
+                      '语音配置',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[800],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: this._callCount,
+                  decoration: InputDecoration(
+                    labelText: '呼叫次数',
+                    hintText: '请输入呼叫次数（默认3次）',
+                    prefixIcon: Icon(Icons.repeat),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // 测试区域卡片
+        Card(
+          elevation: 4,
+          margin: EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.bug_report, color: Colors.purple),
+                    SizedBox(width: 8),
+                    Text(
+                      '测试区域',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple[800],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: this._txtTest,
+                  decoration: InputDecoration(
+                    labelText: '测试结果',
+                    hintText: '测试结果将显示在这里',
+                    prefixIcon: Icon(Icons.info),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                  maxLines: 3,
+                  readOnly: true,
+                ),
+              ],
+            ),
+          ),
         ),
       ]));
 
   Widget _btnSection() {
     return Container(
-      padding: EdgeInsets.only(top: 50.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      padding: EdgeInsets.all(16.0),
+      child: Column(
         children: [
-          _buildButtonColumn(
-              Colors.green, Colors.greenAccent, Icons.save, '保存配置 ', _save),
-          _buildButtonColumn(Colors.green, Colors.greenAccent, Icons.play_arrow,
-              '排队显示', _speak1),
-          _buildButtonColumn(Colors.green, Colors.greenAccent, Icons.play_arrow,
-              '仅叫号', _speak2),
-          _buildButtonColumn(
-              Colors.red, Colors.redAccent, Icons.stop, '停止', _stop),
-          _buildButtonColumn(
-              Colors.blue, Colors.blueAccent, Icons.abc, '发声测试', _pause),
-          _buildButtonColumn(
-              Colors.blue, Colors.blueAccent, Icons.abc, 'GET测试', _doGetTest),
+          // 主要操作按钮
+          Card(
+            elevation: 4,
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.settings, color: Colors.indigo),
+                      SizedBox(width: 8),
+                      Text(
+                        '主要操作',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModernButton(
+                          icon: Icons.save,
+                          label: '保存配置',
+                          color: Colors.blue,
+                          onPressed: _save,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildModernButton(
+                          icon: Icons.play_circle_filled,
+                          label: '排队显示',
+                          color: Colors.green,
+                          onPressed: _speak1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModernButton(
+                          icon: Icons.record_voice_over,
+                          label: '仅叫号',
+                          color: Colors.teal,
+                          onPressed: _speak2,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildModernButton(
+                          icon: Icons.stop_circle,
+                          label: '停止',
+                          color: Colors.red,
+                          onPressed: _stop,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          SizedBox(height: 16),
+
+          // 测试按钮
+          Card(
+            elevation: 4,
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.science, color: Colors.purple),
+                      SizedBox(width: 8),
+                      Text(
+                        '测试功能',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModernButton(
+                          icon: Icons.volume_up,
+                          label: '发声测试',
+                          color: Colors.orange,
+                          onPressed: _pause,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildModernButton(
+                          icon: Icons.network_check,
+                          label: 'GET测试',
+                          color: Colors.cyan,
+                          onPressed: _doGetTest,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _enginesDropDownSection(List<dynamic> engines) => Container(
-        padding: EdgeInsets.only(top: 50.0),
-        child: DropdownButton(
-          value: engine,
-          items: getEnginesDropDownMenuItems(engines),
-          onChanged: changedEnginesDropDownItem,
+        padding: EdgeInsets.all(16.0),
+        child: Card(
+          elevation: 4,
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.settings_voice, color: Colors.teal),
+                    SizedBox(width: 8),
+                    Text(
+                      '语音引擎',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal[800],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.grey[50],
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton(
+                      value: engine,
+                      items: getEnginesDropDownMenuItems(engines),
+                      onChanged: changedEnginesDropDownItem,
+                      icon: Icon(Icons.arrow_drop_down, color: Colors.teal),
+                      hint: Text('选择语音引擎'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
 
   Widget _languageDropDownSection(List<dynamic> languages) => Container(
-      padding: EdgeInsets.only(top: 10.0),
-      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        DropdownButton(
-          value: language,
-          items: getLanguageDropDownMenuItems(languages),
-          onChanged: changedLanguageDropDownItem,
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.language, color: Colors.indigo),
+                  SizedBox(width: 8),
+                  Text(
+                    '语言设置',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo[800],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[50],
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton(
+                    value: language,
+                    items: getLanguageDropDownMenuItems(languages),
+                    onChanged: changedLanguageDropDownItem,
+                    icon: Icon(Icons.arrow_drop_down, color: Colors.indigo),
+                    hint: Text('选择语言'),
+                  ),
+                ),
+              ),
+              if (isAndroid) ...[
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      isCurrentLanguageInstalled
+                          ? Icons.check_circle
+                          : Icons.error,
+                      color: isCurrentLanguageInstalled
+                          ? Colors.green
+                          : Colors.red,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      isCurrentLanguageInstalled ? '语言已安装' : '语言未安装',
+                      style: TextStyle(
+                        color: isCurrentLanguageInstalled
+                            ? Colors.green
+                            : Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ),
-        Visibility(
-          visible: isAndroid,
-          child: Text("Is installed: $isCurrentLanguageInstalled"),
+      ));
+
+  Widget _buildModernButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, color: Colors.white),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
         ),
-      ]));
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        elevation: 3,
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
 
   Column _buildButtonColumn(Color color, Color splashColor, IconData icon,
       String label, Function func) {
@@ -630,48 +1015,159 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget _buildSliders() {
-    return Column(
-      children: [_volume(), _pitch(), _rate()],
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.tune, color: Colors.deepPurple),
+                  SizedBox(width: 8),
+                  Text(
+                    '语音参数调节',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple[800],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              _volume(),
+              _pitch(),
+              _rate(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _volume() {
-    return Slider(
-        value: volume,
-        onChanged: (newVolume) {
-          setState(() => volume = newVolume);
-        },
-        min: 0.0,
-        max: 1.0,
-        divisions: 10,
-        label: "Volume: $volume");
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.volume_up, size: 20, color: Colors.blue),
+            SizedBox(width: 8),
+            Text(
+              '音量: ${(volume * 100).round()}%',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.blue[700],
+              ),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.blue,
+            inactiveTrackColor: Colors.blue[100],
+            thumbColor: Colors.blue,
+            overlayColor: Colors.blue.withAlpha(32),
+            valueIndicatorColor: Colors.blue,
+          ),
+          child: Slider(
+            value: volume,
+            onChanged: (newVolume) {
+              setState(() => volume = newVolume);
+            },
+            min: 0.0,
+            max: 1.0,
+            divisions: 10,
+            label: "${(volume * 100).round()}%",
+          ),
+        ),
+        SizedBox(height: 8),
+      ],
+    );
   }
 
   Widget _pitch() {
-    return Slider(
-      value: pitch,
-      onChanged: (newPitch) {
-        setState(() => pitch = newPitch);
-      },
-      min: 0.5,
-      max: 2.0,
-      divisions: 15,
-      label: "Pitch: $pitch",
-      activeColor: Colors.red,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.graphic_eq, size: 20, color: Colors.red),
+            SizedBox(width: 8),
+            Text(
+              '音调: ${pitch.toStringAsFixed(1)}',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.red[700],
+              ),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.red,
+            inactiveTrackColor: Colors.red[100],
+            thumbColor: Colors.red,
+            overlayColor: Colors.red.withAlpha(32),
+            valueIndicatorColor: Colors.red,
+          ),
+          child: Slider(
+            value: pitch,
+            onChanged: (newPitch) {
+              setState(() => pitch = newPitch);
+            },
+            min: 0.5,
+            max: 2.0,
+            divisions: 15,
+            label: pitch.toStringAsFixed(1),
+          ),
+        ),
+        SizedBox(height: 8),
+      ],
     );
   }
 
   Widget _rate() {
-    return Slider(
-      value: rate,
-      onChanged: (newRate) {
-        setState(() => rate = newRate);
-      },
-      min: 0.0,
-      max: 1.0,
-      divisions: 10,
-      label: "Rate: $rate",
-      activeColor: Colors.green,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.speed, size: 20, color: Colors.green),
+            SizedBox(width: 8),
+            Text(
+              '语速: ${(rate * 100).round()}%',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.green[700],
+              ),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.green,
+            inactiveTrackColor: Colors.green[100],
+            thumbColor: Colors.green,
+            overlayColor: Colors.green.withAlpha(32),
+            valueIndicatorColor: Colors.green,
+          ),
+          child: Slider(
+            value: rate,
+            onChanged: (newRate) {
+              setState(() => rate = newRate);
+            },
+            min: 0.0,
+            max: 1.0,
+            divisions: 10,
+            label: "${(rate * 100).round()}%",
+          ),
+        ),
+      ],
     );
   }
 }
