@@ -94,38 +94,14 @@ class _BrowserPageState extends State<BrowserPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () async {
-              if (await _webViewController.canGoBack()) {
-                await _webViewController.goBack();
-              } else {
-                SystemNavigator.pop();
-              }
-            },
+        // 完全全屏WebView，移除所有浮动按钮
+        body: SafeArea(
+          child: Stack(
+            children: [
+              WebViewWidget(controller: _webViewController),
+              _createProgressBar(_progress, context),
+            ],
           ),
-          title: Text(_webTitle ?? "Flutter WebView"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                _webViewController.reload();
-              },
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  WebViewWidget(controller: _webViewController),
-                  _createProgressBar(_progress, context),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

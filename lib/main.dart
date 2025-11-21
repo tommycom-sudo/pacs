@@ -305,7 +305,7 @@ class _MyAppState extends State<MyApp> {
       // 如果是内网地址，使用测试URL代替
       String testUrl = url;
       if (url.contains('10.196.5.143') || url.contains('192.168.')) {
-        testUrl = 'https://www.baidu.com';
+        testUrl = url;// 'https://www.baidu.com';
         debugPrint('替换为测试URL: $testUrl (原URL无法访问: $url)');
       }
 
