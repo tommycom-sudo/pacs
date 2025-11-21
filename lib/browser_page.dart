@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'dart:async';
+import 'package:webview_flutter/webview_flutter.dart';
 
 /// App内部Web浏览器页面
 class BrowserPage extends StatefulWidget {
@@ -23,118 +22,112 @@ _createProgressBar(double progress, BuildContext context) {
 }
 
 class _BrowserPageState extends State<BrowserPage> {
-  InAppWebViewController? _webViewController;
+  late final WebViewController _webViewController;
   String? _webTitle;
   double _progress = 0;
-  bool isCanGoBack = false;
-  bool isCanForward = false;
+  bool isLoading = true;
 
-  final InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
-    crossPlatform: InAppWebViewOptions(
-      useShouldOverrideUrlLoading: true,
-      mediaPlaybackRequiresUserGesture: false,
-    ),
-
-    /// android 支持HybridComposition
-    android: AndroidInAppWebViewOptions(
-      useHybridComposition: true,
-    ),
-    ios: IOSInAppWebViewOptions(
-      allowsInlineMediaPlayback: true,
-    ),
-  );
-
-  Future<String?> getUrl() {
-    if (_webViewController == null) {
-      return Future.sync(() => null);
-    }
-    return _webViewController!.getUrl().then((uri) => uri.toString());
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('BrowserPage initState - URL: ${widget.url}');
+    _initializeWebView();
   }
 
-  Future<void> loadUrl(String url) {
-    if (_webViewController == null) {
-      return Future.sync(() => null);
-    }
-    return _webViewController!
-        .loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+  void _initializeWebView() {
+    debugPrint('=== 开始初始化WebView ===');
+
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            debugPrint('WebView progress: $progress%');
+            setState(() {
+              _progress = progress / 100.0;
+            });
+          },
+          onPageStarted: (String url) {
+            debugPrint('WebView started loading: $url');
+            setState(() {
+              isLoading = true;
+              _progress = 0;
+            });
+          },
+          onPageFinished: (String url) {
+            debugPrint('WebView finished loading: $url');
+            setState(() {
+              isLoading = false;
+              _progress = 1.0;
+            });
+
+            // 获取页面标题
+            _webViewController.getTitle().then((title) {
+              setState(() {
+                _webTitle = title ?? "WebView";
+              });
+            });
+          },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint('WebView resource error: ${error.description}');
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            debugPrint('WebView navigating to: ${request.url}');
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.url));
+
+    debugPrint('=== WebView初始化完成 ===');
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () {
-          Future<bool> canGoBack = _webViewController!.canGoBack();
-          return canGoBack.then((isCanGoBack) {
-            if (isCanGoBack) {
-              _webViewController!.goBack();
-              return false;
-            } else {
-              return true;
-            }
-          });
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: Row(
-              children: [
-                isCanGoBack
-                    ? IconButton(
-                        onPressed: () {
-                          _webViewController?.goBack();
-                        },
-                        icon: const Icon(Icons.arrow_back))
-                    : IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          SystemNavigator.pop();
-                        })
-              ],
+      onWillPop: () async {
+        if (await _webViewController.canGoBack()) {
+          await _webViewController.goBack();
+          return false;
+        } else {
+          return true;
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              if (await _webViewController.canGoBack()) {
+                await _webViewController.goBack();
+              } else {
+                SystemNavigator.pop();
+              }
+            },
+          ),
+          title: Text(_webTitle ?? "Flutter WebView"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                _webViewController.reload();
+              },
             ),
-            title: Text(_webTitle ?? "FlutterWebView"),
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                  child: Stack(
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: Stack(
                 children: [
-                  InAppWebView(
-                    initialUrlRequest: URLRequest(url: WebUri(widget.url)),
-                    initialOptions: options,
-                    onWebViewCreated: (InAppWebViewController controller) {
-                      _webViewController = controller;
-                    },
-                    onTitleChanged:
-                        (InAppWebViewController controller, String? title) {
-                      setState(() {
-                        _webTitle = title ?? "";
-                      });
-                    },
-                    onLoadStop: (InAppWebViewController controller, Uri? url) {
-                      //页面加载完毕，显示隐藏AppBar的返回键
-                      controller.canGoBack().then((canGoBack) => {
-                            setState(() {
-                              isCanGoBack = canGoBack;
-                            })
-                          });
-                      controller.canGoForward().then((canForward) => {
-                            setState(() {
-                              isCanForward = canForward;
-                            })
-                          });
-                    },
-                    onProgressChanged:
-                        (InAppWebViewController controller, int progress) {
-                      //进度从0 ~ 100
-                      setState(() {
-                        _progress = progress / 100.0;
-                      });
-                    },
-                  ),
-                  _createProgressBar(_progress, context)
+                  WebViewWidget(controller: _webViewController),
+                  _createProgressBar(_progress, context),
                 ],
-              ))
-            ],
-          ),
-        ));
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

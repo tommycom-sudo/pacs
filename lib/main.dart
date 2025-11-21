@@ -14,7 +14,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'browser_page.dart';
 import 'package:url_launcher/link.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher.dart' as url_launcher;
 
 void main() {
   runApp(MaterialApp(
@@ -298,8 +298,42 @@ class _MyAppState extends State<MyApp> {
   // }
 
   void openLink(String url) async {
-    if (!await launchUrl(Uri.parse(url))) {
-      throw 'Could not launch $url';
+    try {
+      debugPrint('=== 开始打开WebView ===');
+      debugPrint('原始URL: $url');
+
+      // 如果是内网地址，使用测试URL代替
+      String testUrl = url;
+      if (url.contains('10.196.5.143') || url.contains('192.168.')) {
+        testUrl = 'https://www.baidu.com';
+        debugPrint('替换为测试URL: $testUrl (原URL无法访问: $url)');
+      }
+
+      debugPrint('即将导航到WebView页面，URL: $testUrl');
+
+      // 只使用应用内WebView，不要同时打开外部浏览器
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) {
+            debugPrint('WebView页面构建器被调用');
+            return BrowserPage(testUrl);
+          },
+        ),
+      );
+
+      debugPrint('WebView导航完成');
+    } catch (e) {
+      debugPrint('WebView打开失败: $e');
+      // 如果WebView失败，再尝试外部浏览器
+      try {
+        await url_launcher.launchUrl(
+          Uri.parse(url),
+          mode: url_launcher.LaunchMode.externalApplication,
+        );
+        debugPrint('外部浏览器打开成功');
+      } catch (e2) {
+        debugPrint('外部浏览器也失败: $e2');
+      }
     }
   }
 
@@ -414,8 +448,12 @@ class _MyAppState extends State<MyApp> {
       List<dynamic> engines) {
     var items = <DropdownMenuItem<String>>[];
     for (dynamic type in engines) {
-      items.add(DropdownMenuItem(
-          value: type as String?, child: Text((type as String))));
+      String engineName = type as String;
+      // Skip empty engine names
+      if (engineName.isNotEmpty) {
+        items.add(DropdownMenuItem(
+            value: engineName, child: Text(engineName)));
+      }
     }
     return items;
   }
@@ -861,10 +899,10 @@ class _MyAppState extends State<MyApp> {
                     color: Colors.grey[50],
                   ),
                   child: DropdownButtonHideUnderline(
-                    child: DropdownButton(
-                      value: engine,
-                      items: getEnginesDropDownMenuItems(engines),
-                      onChanged: changedEnginesDropDownItem,
+                    child: DropdownButton<String>(
+                      value: engine == null || engines.isEmpty || !engines.contains(engine) || engine!.isEmpty ? null : engine,
+                      items: engines.isEmpty ? [] : getEnginesDropDownMenuItems(engines),
+                      onChanged: engines.isEmpty ? null : changedEnginesDropDownItem,
                       icon: Icon(Icons.arrow_drop_down, color: Colors.teal),
                       hint: Text('选择语音引擎'),
                     ),
