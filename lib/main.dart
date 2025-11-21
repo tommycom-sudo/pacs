@@ -298,8 +298,17 @@ class _MyAppState extends State<MyApp> {
   // }
 
   void openLink(String url) async {
-    if (!await launchUrl(Uri.parse(url))) {
-      throw 'Could not launch $url';
+    try {
+      // 尝试使用外部非浏览器应用模式（可能隐藏地址栏）
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+    } catch (e) {
+      // 如果失败，回退到默认浏览器模式
+      if (!await launchUrl(Uri.parse(url))) {
+        throw 'Could not launch $url';
+      }
     }
   }
 
