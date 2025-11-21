@@ -305,7 +305,7 @@ class _MyAppState extends State<MyApp> {
       // 如果是内网地址，使用测试URL代替
       String testUrl = url;
       if (url.contains('10.196.5.143') || url.contains('192.168.')) {
-        testUrl = url;// 'https://www.baidu.com';
+        testUrl = url; // 'https://www.baidu.com';
         debugPrint('替换为测试URL: $testUrl (原URL无法访问: $url)');
       }
 
@@ -451,8 +451,7 @@ class _MyAppState extends State<MyApp> {
       String engineName = type as String;
       // Skip empty engine names
       if (engineName.isNotEmpty) {
-        items.add(DropdownMenuItem(
-            value: engineName, child: Text(engineName)));
+        items.add(DropdownMenuItem(value: engineName, child: Text(engineName)));
       }
     }
     return items;
@@ -900,9 +899,17 @@ class _MyAppState extends State<MyApp> {
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
-                      value: engine == null || engines.isEmpty || !engines.contains(engine) || engine!.isEmpty ? null : engine,
-                      items: engines.isEmpty ? [] : getEnginesDropDownMenuItems(engines),
-                      onChanged: engines.isEmpty ? null : changedEnginesDropDownItem,
+                      value: engine == null ||
+                              engines.isEmpty ||
+                              !engines.contains(engine) ||
+                              engine!.isEmpty
+                          ? null
+                          : engine,
+                      items: engines.isEmpty
+                          ? []
+                          : getEnginesDropDownMenuItems(engines),
+                      onChanged:
+                          engines.isEmpty ? null : changedEnginesDropDownItem,
                       icon: Icon(Icons.arrow_drop_down, color: Colors.teal),
                       hint: Text('选择语音引擎'),
                     ),
