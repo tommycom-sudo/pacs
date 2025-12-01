@@ -9,6 +9,12 @@
     <!-- The STORAGE permission is required for TTS synthesize to file. -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
+    <!-- 前台服务与悬浮窗权限 - 用于覆盖浏览器地址栏 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <!-- Android 14+ 需要指定具体的前台服务类型权限，这里使用 dataSync 以规避类型缺失崩溃 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
@@ -25,7 +31,7 @@
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
         <activity
-            android:name="io.flutter.embedding.android.FlutterActivity"
+            android:name="com.tundralabs.flutterttsexample.MainActivity"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"
@@ -45,6 +51,12 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <service
+            android:name="com.tundralabs.flutterttsexample.OverlayService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

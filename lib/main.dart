@@ -10,6 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
+import 'package:flutter/services.dart';
+
+// 原生悬浮窗通道（Android）
+const MethodChannel _overlayChannel = MethodChannel('native.overlay');
 
 void main() {
   runApp(MaterialApp(
@@ -25,7 +29,7 @@ class MyApp extends StatefulWidget {
 
 enum TtsState { playing, stopped, paused, continued }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late FlutterTts flutterTts;
   String? language;
   String? engine;
@@ -60,6 +64,7 @@ class _MyAppState extends State<MyApp> {
   @override
   initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     initTts();
     WidgetsFlutterBinding.ensureInitialized();
   }
@@ -89,13 +94,17 @@ class _MyAppState extends State<MyApp> {
   }
 
   _doGet() async {
-    //叫号
-    var url = Uri.parse(_url.text + "/getQueue/" + _setid.text);
-    var response = await http.get(url);
-    if (response.statusCode == 200) {
-      await _success(response.body, true);
-    } else {
-      print("失败"); //+ url.toString());
+    // 叫号（加 try/catch，避免网络异常导致应用崩溃）
+    try {
+      var url = Uri.parse(_url.text + "/getQueue/" + _setid.text);
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        await _success(response.body, true);
+      } else {
+        debugPrint("获取队列失败: 状态码=${response.statusCode}, url=$url");
+      }
+    } catch (e) {
+      debugPrint("获取队列异常: $e");
     }
   }
 
@@ -222,6 +231,8 @@ class _MyAppState extends State<MyApp> {
       });
     });
     _speak1();
+    // 注意：不再在启动时自动开启“排队显示”，避免首次运行权限/外部应用跳转导致的崩溃
+    // 请通过页面按钮手动触发“排队显示”或“开启遮挡条”
   }
 
   Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
@@ -259,6 +270,8 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> saveUserConfig(String key, dynamic value) async {
     final prefs = await SharedPreferences.getInstance();
+    // Android 悬浮窗相关逻辑见类内方法
+
     if (value is bool) {
       prefs.setBool(key, value);
     } else if (value is int) {
@@ -307,6 +320,56 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // 悬浮窗：原生通道封装（Android）
+  Future<bool> _ensureOverlayPermission() async {
+    try {
+      final granted =
+          await _overlayChannel.invokeMethod<bool>('isPermissionGranted') ??
+              false;
+      if (granted) return true;
+      await _overlayChannel.invokeMethod('requestPermission');
+      // 用户去设置页手动授权，短暂等待后再检查一次
+      await Future.delayed(const Duration(milliseconds: 300));
+      final recheck =
+          await _overlayChannel.invokeMethod<bool>('isPermissionGranted') ??
+              false;
+      return recheck;
+    } catch (e) {
+      debugPrint('overlay permission error: $e');
+      return false;
+    }
+  }
+
+  Future<void> showTopMaskBar({int heightDp = 80, int alpha = 230}) async {
+    try {
+      final granted = await _ensureOverlayPermission();
+      debugPrint('overlay permission granted: $granted');
+      if (!granted) return;
+      await _overlayChannel.invokeMethod('showMask', {
+        'heightDp': heightDp,
+        'alpha': alpha,
+      });
+    } catch (e) {
+      debugPrint('show overlay error: $e');
+    }
+  }
+
+  Future<void> hideTopMaskBar() async {
+    try {
+      await _overlayChannel.invokeMethod('hideMask');
+    } catch (e) {
+      debugPrint('close overlay error: $e');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 从外部浏览器返回本应用时（resumed），自动关闭遮挡条
+    if (state == AppLifecycleState.resumed) {
+      hideTopMaskBar();
+    }
+  }
+
   /// 语音播报和页面跳转的异步方法
   /// 该方法用于定时执行任务并打开指定URL
   Future<void> _speak1() async {
@@ -340,6 +403,9 @@ class _MyAppState extends State<MyApp> {
     // 打开指定的URL链接
     // _urljh.text: 基础URL地址（从文本输入框获取）
     // _setid.text: 设置ID（从文本输入框获取）
+    await showTopMaskBar(heightDp: 80, alpha: 230);
+    // 给悬浮窗服务一点时间启动，避免被外部浏览器切走时未完成展示
+    await Future.delayed(const Duration(milliseconds: 300));
     openLink(_urljh.text +
         '/ris/?clz=com.bsoft.ris.exam.queuelist.queueview.QueueView&setid=' +
         _setid.text);
@@ -409,9 +475,17 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
-    _timer.cancel();
-    super.dispose();
+    // 取消定时器
+    try {
+      _timer.cancel();
+    } catch (_) {}
+    // 移除生命周期观察者
+    WidgetsBinding.instance.removeObserver(this);
+    // 关闭悬浮窗（如仍开启）
+    hideTopMaskBar();
+    // 停止TTS
     flutterTts.stop();
+    super.dispose();
   }
 
   List<DropdownMenuItem<String>> getEnginesDropDownMenuItems(
@@ -775,6 +849,7 @@ class _MyAppState extends State<MyApp> {
                       ),
                     ],
                   ),
+                  SizedBox(height: 12),
                 ],
               ),
             ),
@@ -1186,4 +1261,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
