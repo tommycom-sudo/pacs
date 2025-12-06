@@ -13,9 +13,13 @@
 ## 环境配置
 
 1.安装git  (注意<=2.8) ， 用 2.37会死活提示不行 Error: Unable to find git in your PATH.
-2.安装flutter环境
-3.配置flutter中国环境（两个全局变量 PUB_HOSTED_URL=https://pub.flutter-io.cn, FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn）
-4.安装android  + sdK + 设置 ANDROID_HOME路径
+2.安装flutter环境  (flutter_windows_3.38.4-stable)
+3.配置flutter中国环境（两个全局变量 
+PUB_HOSTED_URL=https://pub.flutter-io.cn
+FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
+
+4.安装android studio  + sdK + 设置 ANDROID_HOME路径
+   (androidstudio_yfdb_v2025.1.2.11_2265.com) 
 5. c:\gradle\gradle-8.2-all.zip   (这个有代理可以处理吗？）
 
 ## 编译构建
@@ -25,6 +29,17 @@ cd c:\java\pacs
 flutter build apk
 ```
 
+可能错误：
+flutter build apk
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+Upgrading build.gradle
+e: file:///C:/Flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt:744:21 Unresolved reference: filePermissions
+e: file:///C:/Flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt:745:25 Unresolved reference: user
+e: file:///C:/Flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt:746:29 Unresolved reference: read
+e: file:///C:/Flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt:747:29 Unresolved reference: write
+
+FAILURE: Build failed with an exception.
+原因：Flutter 3.38.4 需要 Java 17+
 ## 使用说明
 
 1. **基础配置**:
